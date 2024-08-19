@@ -44,34 +44,39 @@ def convertToMachineCode(tokens: list[str], program_cntr: int, num_sys: str = "b
 							+ rd * 2 ** 7 + opcode_table[opcode])
 
 		case InstType.I:
-			if opcode[0] == 'l':
-				args.insert(1, args.pop())
-
-			if args[0][0] == 'x':
-				rd = int(args[0][1:])
+			# quick fix for `ecall`
+			if opcode == "ecall":
+				machine_code = 0x73
 			else:
-				rd = alias_to_ind[args[0]]
+				if opcode[0] == 'l':
+					args.insert(1, args.pop())
 
-			if args[1][0] == 'x':
-				rs1 = int(args[1][1:])
-			else:
-				rs1 = alias_to_ind[args[1]]
+				if args[0][0] == 'x':
+					rd = int(args[0][1:])
+				else:
+					rd = alias_to_ind[args[0]]
 
-			imm = eval("".join(args[2:])) # have to make it right to left (ignoring order of ops)
-			imm = extractBits(num=imm, high=11, low=0, transpose=0)
-			if funct6_table[opcode] is not None:
-				match opcode:
-					case "ecall":
-						imm = 0x0
-					case "ebreak":
-						imm = 0x1
-					case _:
-						imm = extractBits(num=imm, high=5, low=0, transpose=0) # report error if `imm` is not in range
-						imm += funct6_table[opcode] * 2 ** 6
+				if args[1][0] == 'x':
+					rs1 = int(args[1][1:])
+				else:
+					rs1 = alias_to_ind[args[1]]
 
-			machine_code = (imm * 2 ** 20 + rs1 * 2 ** 15
-							+ funct3_table[opcode] * 2 ** 12
-							+ rd * 2 ** 7 + opcode_table[opcode])
+				imm = ''.join(args[2:])
+				imm = eval(imm, labels) # have to make it right to left (ignoring order of ops)
+				imm = extractBits(num=imm, high=11, low=0, transpose=0)
+				if funct6_table[opcode] is not None:
+					match opcode:
+						case "ecall":
+							imm = 0x0
+						case "ebreak":
+							imm = 0x1
+						case _:
+							imm = extractBits(num=imm, high=5, low=0, transpose=0) # report error if `imm` is not in range
+							imm += funct6_table[opcode] * 2 ** 6
+
+				machine_code = (imm * 2 ** 20 + rs1 * 2 ** 15
+								+ funct3_table[opcode] * 2 ** 12
+								+ rd * 2 ** 7 + opcode_table[opcode])
 
 		case InstType.S:
 			args.insert(1, args.pop())
@@ -106,13 +111,12 @@ def convertToMachineCode(tokens: list[str], program_cntr: int, num_sys: str = "b
 			else:
 				rs2 = alias_to_ind[args[1]]
 
-			imm = "".join(args[2:])
-			# if imm in label_names:
-			# 	loc = labels[imm]
-			# 	imm = loc - program_cntr
-			# else:
-			# 	imm = eval(imm) # have to make it right to left (ignoring order of ops) and check range
-			imm = eval(imm, {label: loc - program_cntr for label, loc in labels.items()})
+			imm = ''.join(args[2:])
+			try:
+				imm = int(imm)
+			except:
+				imm = eval(imm, labels) # have to make it right to left (ignoring order of ops)
+				imm -= program_cntr
 			imm = extractBits(num=imm, high=12, low=1, transpose=1)
 
 			machine_code = (extractBits(num=imm, high=12, low=12, transpose=31)
@@ -130,8 +134,7 @@ def convertToMachineCode(tokens: list[str], program_cntr: int, num_sys: str = "b
 			else:
 				rd = alias_to_ind[args[0]]
 
-			imm = eval("".join(args[1:])) # have to make it right to left (ignoring order of ops)
-			# imm = extractBits(num=imm, high=31, low=12, transpose=12)
+			imm = eval(''.join(args[1:])) # have to make it right to left (ignoring order of ops)
 			imm = extractBits(num=imm, high=19, low=0, transpose=12)
 
 			machine_code = (imm
@@ -144,13 +147,12 @@ def convertToMachineCode(tokens: list[str], program_cntr: int, num_sys: str = "b
 			else:
 				rd = alias_to_ind[args[0]]
 
-			imm = "".join(args[1:])
-			# if imm in label_names:
-			# 	loc = labels[imm]
-			# 	imm = loc - program_cntr
-			# else:
-			# 	imm = eval(imm) # have to make it right to left (ignoring order of ops)
-			imm = eval(imm, {label: loc - program_cntr for label, loc in labels.items()})
+			imm = ''.join(args[1:])
+			try:
+				imm = int(imm)
+			except:
+				imm = eval(imm, labels) # have to make it right to left (ignoring order of ops)
+				imm -= program_cntr
 			imm = (extractBits(num=imm, high=20, low=20, transpose=31)
 				+ extractBits(num=imm, high=10, low=1, transpose=21)
 				+ extractBits(num=imm, high=11, low=11, transpose=20)
@@ -231,9 +233,9 @@ def secondPass(lines: list[str]) -> list[str]:
 			line = removeOutermostParentheses(line)
 			tokens = [token for token in line.split(' ') if token != '']
 			try:
-				machine_code = convertToMachineCode(tokens, program_cntr, num_sys="hex")
+				machine_code = convertToMachineCode(tokens, program_cntr, num_sys="bin")
 			except:
-				print("Error: line:", line)
+				print("Error in line:", line)
 				machine_code = ' '
 			if machine_code != '':
 				machine_codes.append(machine_code)
@@ -509,25 +511,32 @@ print({name: hex(labels[name]) for name in label_names}, '\n')
 
 machine_codes = secondPass(new_lines)
 
-print('\n'.join(machine_codes))
+# print('\n'.join(machine_codes))
 
 with open("binary_output.txt", 'w') as fp:
-	fp.writelines(machine_codes)
+	fp.write('\n'.join(machine_codes))
 
 # compare
 with open("ground_truth.txt", 'r') as fp:
 	raw_lines = fp.readlines()
 
-gt = [line.strip().split(' ')[-1] for line in raw_lines]
-for i, (tr, my) in enumerate(zip(gt, machine_codes))
+gt = [line.strip().split(' ')[-1] for line in raw_lines if line.strip() != '' and '<' not in line]
+for i, (tr, my) in enumerate(zip(gt, machine_codes)):
+	if tr == my:
+		# print(hex(4 * i)[2:])
+		pass
+	else:
+		print(f"{hex(4 * i)[2:]}	{tr}	{my}")
+
+print("End of program.")
 
 """
 Known errors:
-doesn't work too well with syntactically incorrect input
-can't report errors
-v can't work with bracket syntax
-can't work with divisions in `imm`
-v has to work with various number systems in mathematical expressions
-v auipc x3 65536 works but auipc x3 0x10000 does not
-branch and jump can't work with expressions in terms of labels (such as `label_1` + `label_2`)
+	doesn't work too well with syntactically incorrect input
+	can't report errors
+	v can't work with bracket syntax
+	can't work with divisions in `imm`
+	v has to work with various number systems in mathematical expressions
+	v auipc x3 65536 works but auipc x3 0x10000 does not
+	v branch and jump can't work with expressions in terms of labels (such as `label_1` + `label_2`)
 """
