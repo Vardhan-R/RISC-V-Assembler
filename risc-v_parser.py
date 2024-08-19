@@ -107,11 +107,12 @@ def convertToMachineCode(tokens: list[str], program_cntr: int, num_sys: str = "b
 				rs2 = alias_to_ind[args[1]]
 
 			imm = "".join(args[2:])
-			if imm in label_names:
-				loc = labels[imm]
-				imm = loc - program_cntr
-			else:
-				imm = eval(imm) # have to make it right to left (ignoring order of ops) and check range
+			# if imm in label_names:
+			# 	loc = labels[imm]
+			# 	imm = loc - program_cntr
+			# else:
+			# 	imm = eval(imm) # have to make it right to left (ignoring order of ops) and check range
+			imm = eval(imm, {label: loc - program_cntr for label, loc in labels.items()})
 			imm = extractBits(num=imm, high=12, low=1, transpose=1)
 
 			machine_code = (extractBits(num=imm, high=12, low=12, transpose=31)
@@ -144,11 +145,12 @@ def convertToMachineCode(tokens: list[str], program_cntr: int, num_sys: str = "b
 				rd = alias_to_ind[args[0]]
 
 			imm = "".join(args[1:])
-			if imm in label_names:
-				loc = labels[imm]
-				imm = loc - program_cntr
-			else:
-				imm = eval(imm) # have to make it right to left (ignoring order of ops)
+			# if imm in label_names:
+			# 	loc = labels[imm]
+			# 	imm = loc - program_cntr
+			# else:
+			# 	imm = eval(imm) # have to make it right to left (ignoring order of ops)
+			imm = eval(imm, {label: loc - program_cntr for label, loc in labels.items()})
 			imm = (extractBits(num=imm, high=20, low=20, transpose=31)
 				+ extractBits(num=imm, high=10, low=1, transpose=21)
 				+ extractBits(num=imm, high=11, low=11, transpose=20)
@@ -228,7 +230,11 @@ def secondPass(lines: list[str]) -> list[str]:
 			line = line.replace(',', ' ')
 			line = removeOutermostParentheses(line)
 			tokens = [token for token in line.split(' ') if token != '']
-			machine_code = convertToMachineCode(tokens, program_cntr, num_sys="hex")
+			try:
+				machine_code = convertToMachineCode(tokens, program_cntr, num_sys="hex")
+			except:
+				print("Error: line:", line)
+				machine_code = ' '
 			if machine_code != '':
 				machine_codes.append(machine_code)
 				program_cntr += 4
@@ -505,6 +511,16 @@ machine_codes = secondPass(new_lines)
 
 print('\n'.join(machine_codes))
 
+with open("binary_output.txt", 'w') as fp:
+	fp.writelines(machine_codes)
+
+# compare
+with open("ground_truth.txt", 'r') as fp:
+	raw_lines = fp.readlines()
+
+gt = [line.strip().split(' ')[-1] for line in raw_lines]
+for i, (tr, my) in enumerate(zip(gt, machine_codes))
+
 """
 Known errors:
 doesn't work too well with syntactically incorrect input
@@ -513,4 +529,5 @@ v can't work with bracket syntax
 can't work with divisions in `imm`
 v has to work with various number systems in mathematical expressions
 v auipc x3 65536 works but auipc x3 0x10000 does not
+branch and jump can't work with expressions in terms of labels (such as `label_1` + `label_2`)
 """
