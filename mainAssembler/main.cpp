@@ -75,7 +75,7 @@ int eval(string &num){
     if(num[1] =='x'){
         imm = stoi(num, nullptr, 16);
     }
-    else if (num[0] == 'b'){
+    else if (num[1] == 'b'){
         imm = stoi(num, nullptr, 2);
     }
     else{
