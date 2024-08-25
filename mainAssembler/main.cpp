@@ -20,26 +20,32 @@ void processLabels(vector<string>& input, unordered_map<string, int>& labels, ve
     for (size_t i = 0; i < input.size(); ++i) {
         string line = input[i];
         
-        if (!line.empty()) { // Ignore blank lines
+        if (!line.empty()) { 
+            // find comments and remove them
+            size_t comment_pos = line.find('#');
+            if (comment_pos != string::npos) { 
+                line = line.substr(0, comment_pos);
+            }
+            
             size_t colon_pos = line.find(':');
             if (colon_pos != string::npos) { // If line contains a label
                 string label = line.substr(0, colon_pos);
+                line = line.substr(colon_pos + 1); // line after label
                 labels[label] = program_cntr;
-                
-                // Extract the line after the label and remove comments
-                string rest_of_line = line.substr(colon_pos + 1); 
-                size_t comment_pos = rest_of_line.find('#');
-                if (comment_pos != string::npos) {
-                    rest_of_line = rest_of_line.substr(0, comment_pos);
-                }
-                
-                // rest_of_line.erase(remove(rest_of_line.begin(), rest_of_line.end(), ' '), rest_of_line.end());
-                instructions.push_back(rest_of_line);
-            } 
-            else if (line.find('.') == string::npos) { // If line does not contain a dot
-                program_cntr += 4;
-                instructions.push_back(line); // Add line to output
             }
+
+            if (!line.empty()){
+                instructions.push_back(line);
+                program_cntr += 4;
+            }
+   
+            
+
+             
+            // else if (line.find('.') == string::npos) { // If line does not contain a dot
+            //     program_cntr += 4;
+            //     instructions.push_back(line); // Add line to output
+            // }
         }
     }
 }
@@ -306,8 +312,8 @@ int main(int argc, char* argv[]) {
             }
 
             processBrackets(tokens);
-            machineCode(tokens, labels, program_cntr);
             output.push_back(tokens); // testing parsed tokens
+            machineCode(tokens, labels, program_cntr);
             program_cntr += 4;
 
         }
