@@ -17,5 +17,5 @@ There are no blank lines in the input file
 
 make
 to compile run: make
-to run: ./main.exe  <input file> 
+to run: ./main.exe <input file> 
 to clean object files: make clean

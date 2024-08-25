@@ -4,7 +4,6 @@
 #include<fstream>
 #include "RISCV_instr_constants.h"
 
-
 using namespace std;
 
 vector<string> final_hexcode;
@@ -333,10 +332,10 @@ int main(int argc, char* argv[]) {
 
 
 
-    // cout << endl;
-    // for (auto l : labels) {
-    //     cout << l.first << " " << l.second << endl;
-    // }
+    cout << endl;
+    for (auto l : labels) {
+        cout << l.first << " " << l.second << endl;
+    }
 
     ofstream output_file("output.hex");
     for (auto& code : final_hexcode) {

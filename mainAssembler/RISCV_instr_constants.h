@@ -13,4 +13,4 @@ extern unordered_map<string, int> funct3_table;
 extern unordered_map<string, int> funct6_table;
 extern unordered_map<string, int> opcode_table;
 
-#endif 
+#endif
