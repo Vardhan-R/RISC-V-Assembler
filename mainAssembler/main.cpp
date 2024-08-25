@@ -8,8 +8,6 @@
 using namespace std;
 
 vector<string> final_hexcode;
-int a;
-
 
 // extract labels
 // remove comments addi......  # comment
