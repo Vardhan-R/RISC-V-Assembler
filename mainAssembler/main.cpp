@@ -4,27 +4,31 @@
 #include<fstream>
 #include "RISCV_instr_constants.h"
 
+
 using namespace std;
 
 vector<string> final_hexcode;
 
-// extract labels
-// remove comments addi......  # comment
-// retains white spaces and commas
+// trim leading and trailing whitespaces and special characters
+string trim(string& str) {
+    size_t first = str.find_first_not_of(" \n\r\t");
+    if (first == string::npos)
+        return ""; 
+
+    size_t last = str.find_last_not_of(" \n\r\t");
+    return str.substr(first, (last - first + 1));
+}
+
+
+// process labels and store them in a map
 void processLabels(vector<string>& input, unordered_map<string, int>& labels, vector<string>& instructions) {
     int program_cntr = 0;
     instructions.clear();
     
     for (size_t i = 0; i < input.size(); ++i) {
         string line = input[i];
-        
         if (!line.empty()) { 
-            // find comments and remove them
-            size_t comment_pos = line.find('#');
-            if (comment_pos != string::npos) { 
-                line = line.substr(0, comment_pos);
-            }
-            
+
             size_t colon_pos = line.find(':');
             if (colon_pos != string::npos) { // If line contains a label
                 string label = line.substr(0, colon_pos);
@@ -36,22 +40,16 @@ void processLabels(vector<string>& input, unordered_map<string, int>& labels, ve
                 instructions.push_back(line);
                 program_cntr += 4;
             }
-   
-            
 
-             
-            // else if (line.find('.') == string::npos) { // If line does not contain a dot
-            //     program_cntr += 4;
-            //     instructions.push_back(line); // Add line to output
-            // }
         }
     }
 }
 
+// handle brackets for load and store instructions
 void processBrackets(vector<string> &tokens){
     for(auto &token: tokens){
         size_t pos = token.find('(');
-        // for inst like 100(x1)
+        // for instructions like 100(x1)
         // extracts x1, 100 and removes ( and )
         if(pos != string::npos){
             int k = token.length();
@@ -64,11 +62,13 @@ void processBrackets(vector<string> &tokens){
     }
 }
 
+// convert to lowercase
 string toLower(string &str) {
     transform(str.begin(), str.end(), str.begin(), ::tolower);
     return str;
 }
 
+// extract bits from num from num[high:low] both inclusive and transpose to left by transpose
 int extractBits(int num, int high, int low, int transpose){
     return (num >> low & ((1 << (high - low + 1)) - 1)) << transpose; 
 }
@@ -246,7 +246,7 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
                 rd = alias_to_ind[args[0]];
             }
             label = args[1];
-            imm = labels[label] - program_cntr + 4;
+            imm = labels[label] - program_cntr ;
             machine_code = (extractBits(imm, 20, 20, 0) * (1<<31) + 
                             extractBits(imm, 10, 1, 0) * (1<<21) + 
                             extractBits(imm, 11, 11, 0) * (1<<20) + 
@@ -281,9 +281,35 @@ int main(int argc, char* argv[]) {
     vector<string> input;
     string line;
     while (getline(input_file, line)) {
-        input.push_back(line);
+
+        line = trim(line);
+        size_t dot_pos = line.find('.');
+        if (dot_pos != string::npos){
+                continue;
+        }
+
+        size_t comment_pos = line.find('#');
+        if (comment_pos != string::npos) { 
+            line = line.substr(0, comment_pos);
+            line = trim(line);
+        }
+
+        comment_pos = line.find(';');
+        if (comment_pos != string::npos) { 
+            line = line.substr(0, comment_pos);
+            line = trim(line);
+        }
+        
+        if(!line.empty()){
+            input.push_back(line);
+        }
     }
     input_file.close();
+
+    // for(auto &line: input){
+    //     cout << line << endl;
+    // }
+    // cout<<endl;
 
     unordered_map<string, int> labels; // store labels
     vector<string> instructions; // store extracted instructions
@@ -310,6 +336,10 @@ int main(int argc, char* argv[]) {
             }
 
             processBrackets(tokens);
+            // for(auto token : tokens) {
+            //     cout << token << "-";
+            // }
+            // cout << endl;
             output.push_back(tokens); // testing parsed tokens
             machineCode(tokens, labels, program_cntr);
             program_cntr += 4;
@@ -332,10 +362,10 @@ int main(int argc, char* argv[]) {
 
 
 
-    cout << endl;
-    for (auto l : labels) {
-        cout << l.first << " " << l.second << endl;
-    }
+    // cout << endl;
+    // for (auto l : labels) {
+    //     cout << l.first << " " << l.second << endl;
+    // }
 
     ofstream output_file("output.hex");
     for (auto& code : final_hexcode) {

@@ -1,16 +1,13 @@
 .data
-    .dword 28 37
-
+.dword 1234
 .text
-    addi x0 x0 1
-    ld x0 1(x1)
-    ld x0 1 x1
-    jalr x0 x1 1
-    addi x9 x9(1)
-    ld x9 1 x9
+beq x1, x2, L1
+jal x0, L2
+L1: 
+    xor  a5, a3, a7
+    lui x9, 0x10000 
+L2: 
 
-    addi x15, x22, -45
-    and x23, x8, x9
-    blt x2, x11, 240
-    sd x19, -54(x1)
-    jal x3, -10116
+    add t1, x8, s10
+
+
