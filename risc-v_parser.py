@@ -233,7 +233,7 @@ def secondPass(lines: list[str]) -> list[str]:
 			line = removeOutermostParentheses(line)
 			tokens = [token for token in line.split(' ') if token != '']
 			try:
-				machine_code = convertToMachineCode(tokens, program_cntr, num_sys="bin")
+				machine_code = convertToMachineCode(tokens, program_cntr, num_sys="hex")
 			except:
 				print("Error in line:", line)
 				machine_code = ' '
@@ -516,17 +516,17 @@ machine_codes = secondPass(new_lines)
 with open("binary_output.txt", 'w') as fp:
 	fp.write('\n'.join(machine_codes))
 
-# compare
-with open("ground_truth.txt", 'r') as fp:
-	raw_lines = fp.readlines()
+# # compare
+# with open("ground_truth.txt", 'r') as fp:
+# 	raw_lines = fp.readlines()
 
-gt = [line.strip().split(' ')[-1] for line in raw_lines if line.strip() != '' and '<' not in line]
-for i, (tr, my) in enumerate(zip(gt, machine_codes)):
-	if tr == my:
-		# print(hex(4 * i)[2:])
-		pass
-	else:
-		print(f"{hex(4 * i)[2:]}	{tr}	{my}")
+# gt = [line.strip().split(' ')[-1] for line in raw_lines if line.strip() != '' and '<' not in line]
+# for i, (tr, my) in enumerate(zip(gt, machine_codes)):
+# 	if tr == my:
+# 		# print(hex(4 * i)[2:])
+# 		pass
+# 	else:
+# 		print(f"{hex(4 * i)[2:]}	{tr}	{my}")
 
 print("End of program.")
 
