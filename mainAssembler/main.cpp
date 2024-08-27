@@ -9,6 +9,15 @@ using namespace std;
 
 vector<string> final_hexcode;
 
+string trim(const std::string& str) {
+    size_t first = str.find_first_not_of(" \n\r\t");
+    if (first == string::npos)
+        return ""; 
+
+    size_t last = str.find_last_not_of(" \n\r\t");
+    return str.substr(first, (last - first + 1));
+}
+
 
 // extract labels
 // remove comments addi......  # comment
@@ -26,6 +35,7 @@ void processLabels(vector<string>& input, unordered_map<string, int>& labels, ve
             if (comment_pos != string::npos) { 
                 line = line.substr(0, comment_pos);
             }
+
             
             size_t colon_pos = line.find(':');
             if (colon_pos != string::npos) { // If line contains a label
@@ -283,9 +293,17 @@ int main(int argc, char* argv[]) {
     vector<string> input;
     string line;
     while (getline(input_file, line)) {
-        input.push_back(line);
+        line = trim(line);
+        if(!line.empty()){
+            input.push_back(line);
+        }
     }
     input_file.close();
+
+    // for(auto &line: input){
+    //     cout << line << endl;
+    // }
+    // cout<<endl;
 
     unordered_map<string, int> labels; // store labels
     vector<string> instructions; // store extracted instructions
