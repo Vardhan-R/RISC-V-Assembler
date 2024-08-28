@@ -55,7 +55,6 @@ unordered_map<string, int> inst_type = {
 
     {"ecall",I},
     {"ebreak",I}
-
 };
 
 unordered_map<string, int> alias_to_ind = {
@@ -68,7 +67,7 @@ unordered_map<string, int> alias_to_ind = {
         {"t1", 6},
         {"t2", 7},
         {"s0", 8},
-        {"fp", 8},  
+        {"fp", 8},
         {"s1", 9},
         {"a0", 10},
         {"a1", 11},
@@ -154,7 +153,7 @@ unordered_map<string, int> funct3_table = {
         {"ecall", 0x0},
 
         {"ebreak", 0x0}
-    };
+};
 
 unordered_map<string, int> funct6_table = {
         {"addi", -1},
@@ -176,7 +175,7 @@ unordered_map<string, int> funct6_table = {
         {"jalr", -1},
         {"ecall", 0x0},
         {"ebreak", 0x1}
-    };
+};
 
 unordered_map<string, int> opcode_table = {
         {"add", 0b0110011},
