@@ -18,12 +18,11 @@ string trim(string& str) {
     return str.substr(first, (last - first + 1));
 }
 
-
 // process labels and find the adress of labels
 void processLabels(vector<string>& input, unordered_map<string, int>& labels, vector<string>& instructions, vector<int>& line_num, vector<int>& line_numprocessed) {
     int program_cntr = 0;
     instructions.clear();
-    
+
     for (int i = 0; i < input.size(); ++i) {
         string line = input[i];
         size_t colon_pos = line.find(':');
@@ -40,7 +39,6 @@ void processLabels(vector<string>& input, unordered_map<string, int>& labels, ve
             instructions.push_back(line);
             program_cntr += 4;
         }
-        
     }
 }
 
@@ -135,7 +133,6 @@ void checkLabel(string &label, unordered_map<string, int> &labels, int line){
 }
 
 void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int program_cntr, int line){
-
     stringstream ss;
     string opcode = toLower(tokens[0]); 
     if(opcode_table.find(opcode) == opcode_table.end()){
@@ -248,7 +245,6 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
             else {
                 checkRegAlias(args[1], line);
                 rs1 = alias_to_ind[args[1]];
-
             }
 
             imm = eval(args[2], line);
@@ -310,7 +306,7 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
                 checkRegAlias(args[0], line);
                 rd = alias_to_ind[args[0]];
             }
-            
+
             imm = eval(args[1], line);
             imm = imm << 12;
             machine_code = (extractBits(imm, 31, 12, 0) * (1<<12) +
@@ -399,7 +395,7 @@ int main(int argc, char* argv[]) {
     //     cout << j << " ";
     // }
     // cout << endl;
-    
+
 
     // for(auto &line: input){
     //     cout << line << endl;
@@ -424,7 +420,7 @@ int main(int argc, char* argv[]) {
 
     vector<vector<string>> output; // for testing output
     int program_cntr = 0;
-    
+
     l = 0;
     for (auto line : instructions) {
         if (!line.empty()) {
@@ -447,7 +443,6 @@ int main(int argc, char* argv[]) {
             machineCode(tokens, labels, program_cntr, line_numprocessed[l]);
             program_cntr += 4;
             l += 1;
-
         }
     }
 
@@ -468,7 +463,7 @@ int main(int argc, char* argv[]) {
 
     // cout << endl;
     // for (auto l : labels) {
-    //     cout << l.first << " " << l.second << endl;
+    //     cout << l.first << hex << " " << l.second << endl;
     // }
 
     ofstream output_file("output.hex");
@@ -479,4 +474,3 @@ int main(int argc, char* argv[]) {
     cout << endl <<"Output written to output.hex" << endl;
     return 0;
 }
-

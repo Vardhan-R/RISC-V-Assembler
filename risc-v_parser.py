@@ -502,6 +502,7 @@ source_file = sys.argv[1]
 with open(source_file, 'r') as fp:
 	raw_lines = fp.readlines()
 
+raw_lines = list(map(lambda s: s.replace(';', '#'), raw_lines))
 formatted_lines = list(map(lambda s: s.split('#')[0].strip(), raw_lines))
 
 labels, new_lines = firstPass(formatted_lines)
@@ -516,17 +517,18 @@ machine_codes = secondPass(new_lines)
 with open("binary_output.txt", 'w') as fp:
 	fp.write('\n'.join(machine_codes))
 
-# # compare
+# compare
 # with open("ground_truth.txt", 'r') as fp:
-# 	raw_lines = fp.readlines()
+with open("./mainAssembler/output.hex", 'r') as fp:
+	raw_lines = fp.readlines()
 
-# gt = [line.strip().split(' ')[-1] for line in raw_lines if line.strip() != '' and '<' not in line]
-# for i, (tr, my) in enumerate(zip(gt, machine_codes)):
-# 	if tr == my:
-# 		# print(hex(4 * i)[2:])
-# 		pass
-# 	else:
-# 		print(f"{hex(4 * i)[2:]}	{tr}	{my}")
+gt = [line.strip().split(' ')[-1] for line in raw_lines if line.strip() != '' and '<' not in line]
+for i, (tr, my) in enumerate(zip(gt, machine_codes)):
+	if tr == my:
+		print(hex(4 * i)[2:])
+		pass
+	else:
+		print(f"{hex(4 * i)[2:]}	{tr}	{my}")
 
 print("End of program.")
 

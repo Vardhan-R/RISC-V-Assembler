@@ -18,10 +18,10 @@
     ori x0 a1 -1
          srai x1 x11 28
     
-    sb x1 0 x2
-    sw x7 19 x2
-    sd x9 99 x13
-    sh x8 -1 x31
+      ;    sb x1 0 x2
+    ; sw x7 19 x2
+    # ; sd x9 99 x13
+    ;#sh x8 -1 x31
     
     lui x7 1010000
      auipc x3 1010101
