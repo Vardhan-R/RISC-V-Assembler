@@ -1,8 +1,8 @@
-
+addi x1, x2, 90
 .data
 .dword 1234
 .text
-    beq x1 x2,   L1
+    beq x1 x2,   L1 
     jal x0, L2
 L1: 
 
