@@ -1,19 +1,13 @@
 doesnt handle ecall ebreak
 --------------------------------
-cant handle smtg like 
-L1:
-addi x1, x1, 1
+error handling (done)
 
-cant have .text , .word ...
+check register names and aliases are valid
+check if the instruction is valid
+check if the immediate value is valid
+check if the label is valid
 -------------------------------
-must follow 
-
-If it helps, you may assume that there is only 1 space in between the instruction and the
-first operand. Also, only 1 space between “,” and second operand and so on. Similarly,
-one colon after the label and then one space.
-
-There are no blank lines in the input file
---------------------------------
+to compile:
 
 make
 to compile run: make

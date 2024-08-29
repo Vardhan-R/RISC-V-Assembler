@@ -20,28 +20,28 @@ string trim(string& str) {
 }
 
 
-// process labels and store them in a map
-void processLabels(vector<string>& input, unordered_map<string, int>& labels, vector<string>& instructions) {
+// process labels and find the adress of labels
+void processLabels(vector<string>& input, unordered_map<string, int>& labels, vector<string>& instructions, vector<int>& line_num, vector<int>& line_numprocessed) {
     int program_cntr = 0;
     instructions.clear();
     
-    for (size_t i = 0; i < input.size(); ++i) {
+    for (int i = 0; i < input.size(); ++i) {
         string line = input[i];
-        if (!line.empty()) { 
-
-            size_t colon_pos = line.find(':');
-            if (colon_pos != string::npos) { // If line contains a label
-                string label = line.substr(0, colon_pos);
-                line = line.substr(colon_pos + 1); // line after label
-                labels[label] = program_cntr;
-            }
-
-            if (!line.empty()){
-                instructions.push_back(line);
-                program_cntr += 4;
-            }
-
+        size_t colon_pos = line.find(':');
+        if (colon_pos != string::npos) { // If line contains a label
+            string label = line.substr(0, colon_pos);
+            label = trim(label);
+            line = line.substr(colon_pos + 1); // line after label
+            line = trim(line);
+            labels[label] = program_cntr;
         }
+
+        if (!line.empty()){
+            line_numprocessed.push_back(line_num[i]);
+            instructions.push_back(line);
+            program_cntr += 4;
+        }
+        
     }
 }
 
@@ -73,26 +73,75 @@ int extractBits(int num, int high, int low, int transpose){
     return (num >> low & ((1 << (high - low + 1)) - 1)) << transpose; 
 }
 
-// extract number from dec, bin, hex represenataion
-int eval(string &num){
+// extract number from dec, bin, hex represenataion and check if they are valid representations
+int eval(string &num, int line){
     int imm = 0;
-    if(num[1] =='x'){
-        imm = stoi(num, nullptr, 16);
+    size_t pos;
+    try{
+        if(num[1] =='x'){
+            imm = stoi(num, &pos, 16);
+        }
+        else if (num[1] == 'b'){
+            imm = stoi(num.substr(2), &pos, 2);
+            pos += 2;
+        }
+        else{
+            imm = stoi(num);
+        }
+
+        if(pos != num.length()){
+            cerr << "Error : "<<"Line "<< line <<"| Invalid immediate value"<< endl;
+            exit(1);
+        }
     }
-    else if (num[1] == 'b'){
-        imm = stoi(num, nullptr, 2);
-    }
-    else{
-        imm = stoi(num);
+
+    catch(invalid_argument &e){
+        cerr << "Error : "<<"Line "<< line <<"| Invalid immediate value"<< endl;
+        exit(1);
     }
     return imm;
 }
 
-void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int program_cntr){
+// check if number of arguments are correct for given instruction
+void checkArgLen(string &opcode, int arg_len, int len, int line){
+    if(arg_len != len){
+        cerr << "Error : "<<"Line "<< line <<"| Invalid number of arguments for :" << opcode << endl;
+        exit(1);
+    }
+}
+
+// check if register number is valid
+void checkRegister(int reg, int line){
+    if(reg < 0 || reg > 31){
+        cerr << "Error : "<<"Line "<< line << "| Invalid Register Number" << endl;
+        exit(1);
+    }
+}
+
+// check if register alias is valid
+void checkRegAlias(string &reg, int line){
+    if(alias_to_ind.find(reg) == alias_to_ind.end()){
+        cerr<< "Error : "<<"Line "<< line <<  "| Invalid Register Alias "<< reg << endl;
+        exit(1);
+    }
+}
+
+// check if label is defined
+void checkLabel(string &label, unordered_map<string, int> &labels, int line){
+    if(labels.find(label) == labels.end()){
+        cerr << "Error : "<<"Line "<< line << "| Label not defined: " << label << endl;
+        exit(1);
+    }
+}
+
+void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int program_cntr, int line){
 
     stringstream ss;
     string opcode = toLower(tokens[0]); 
-    
+    if(opcode_table.find(opcode) == opcode_table.end()){
+        cerr<< "Error : "<<"Line "<< line << "| Invalid Instruction :" <<  opcode <<endl;
+        exit(1);
+    }
     int type = inst_type[opcode];
     vector<string> args(tokens.begin() + 1, tokens.end());
     int machine_code = 0;
@@ -100,27 +149,36 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
     int imm; 
     string hex_code;
     string label;
+    int arg_len = args.size();
 
     switch(type){
         case R:
+            checkArgLen(opcode, arg_len, 3, line);
+
             if (args[0][0] == 'x') {
                 rd = stoi(args[0].substr(1));
+                checkRegister(rd, line);
             } 
             else {
+                checkRegAlias(args[0], line);
                 rd = alias_to_ind[args[0]];
             }
 
             if (args[1][0] == 'x') {
                 rs1 = stoi(args[1].substr(1));
+                checkRegister(rs1, line);
             } 
             else {
+                checkRegAlias(args[1], line);
                 rs1 = alias_to_ind[args[1]];
             }
 
             if (args[2][0] == 'x') {
                 rs2 = stoi(args[2].substr(1));
+                checkRegister(rs2, line);
             } 
             else {
+                checkRegAlias(args[2], line);
                 rs2 = alias_to_ind[args[2]];
             }
 
@@ -138,20 +196,26 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
             break;
 
         case I:
+            checkArgLen(opcode, arg_len, 3, line);
             if (args[0][0] == 'x') {
                 rd = stoi(args[0].substr(1));
+                checkRegister(rd, line);
             } 
             else {
+                checkRegAlias(args[0], line);
                 rd = alias_to_ind[args[0]];
             }
 
             if (args[1][0] == 'x') {
                 rs1 = stoi(args[1].substr(1));
+                checkRegister(rs1, line);
             } 
             else {
+                checkRegAlias(args[1], line);
                 rs1 = alias_to_ind[args[1]];
             }
-            imm = eval(args[2]);
+
+            imm = eval(args[2], line);
             imm = extractBits(imm, 11, 0, 0);
 
             if(funct6_table[opcode] != -1){
@@ -168,20 +232,28 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
             break;
 
         case S:
+            checkArgLen(opcode, arg_len, 3, line);
             if (args[0][0] == 'x') {
                 rs2 = stoi(args[0].substr(1));
+                checkRegister(rs2, line);
             } 
             else {
+                checkRegAlias(args[0], line);
                 rs2 = alias_to_ind[args[0]];
             }
 
             if (args[1][0] == 'x') {
                 rs1 = stoi(args[1].substr(1));
+                checkRegister(rs1, line);
             }
             else {
+                checkRegAlias(args[1], line);
                 rs1 = alias_to_ind[args[1]];
+
             }
-            imm = eval(args[2]);
+
+            imm = eval(args[2], line);
+
             machine_code = (extractBits(imm, 11, 5, 0) * (1<<25) + 
                             rs2 * (1<<20) + rs1 * (1<<15) + 
                             funct3_table[opcode] * (1<<12) + 
@@ -193,20 +265,28 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
             break;
 
         case B:
+            checkArgLen(opcode, arg_len, 3, line);
             if (args[0][0] == 'x') {
                 rs1 = stoi(args[0].substr(1));
+                checkRegister(rs1, line);
+
             } 
             else {
+                checkRegAlias(args[0], line);
                 rs1 = alias_to_ind[args[0]];
             }
 
             if (args[1][0] == 'x') {
                 rs2 = stoi(args[1].substr(1));
+                checkRegister(rs2, line);
             } 
             else {
+                checkRegAlias(args[1], line);
                 rs2 = alias_to_ind[args[1]];
             }
+
             label = args[2];
+            checkLabel(label, labels, line);
             imm = labels[label] - program_cntr;
             
             machine_code = (extractBits(imm, 12, 12, 0) * (1<<31) + 
@@ -222,14 +302,17 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
             break;
 
         case U:
+            checkArgLen(opcode, arg_len, 2, line);
             if (args[0][0] == 'x') {
                 rd = stoi(args[0].substr(1));
+                checkRegister(rd, line);
             } 
             else {
+                checkRegAlias(args[0], line);
                 rd = alias_to_ind[args[0]];
             }
             
-            imm = eval(args[1]);
+            imm = eval(args[1], line);
             imm = imm << 12;
             machine_code = (extractBits(imm, 31, 12, 0) * (1<<12) + rd * (1<<7) + opcode_table[opcode]);
 
@@ -239,14 +322,19 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
             break;
 
         case J:
+            checkArgLen(opcode, arg_len, 2, line);
             if (args[0][0] == 'x') {
                 rd = stoi(args[0].substr(1));
+                checkRegister(rd, line);
             } 
             else {
+                checkRegAlias(args[0], line);
                 rd = alias_to_ind[args[0]];
             }
             label = args[1];
+            checkLabel(label, labels, line);
             imm = labels[label] - program_cntr ;
+
             machine_code = (extractBits(imm, 20, 20, 0) * (1<<31) + 
                             extractBits(imm, 10, 1, 0) * (1<<21) + 
                             extractBits(imm, 11, 11, 0) * (1<<20) + 
@@ -280,11 +368,14 @@ int main(int argc, char* argv[]) {
     // obtain input from file
     vector<string> input;
     string line;
+    vector<int> line_num;
+    int l = 1;
     while (getline(input_file, line)) {
 
         line = trim(line);
         size_t dot_pos = line.find('.');
         if (dot_pos != string::npos){
+                l += 1;
                 continue;
         }
 
@@ -302,9 +393,18 @@ int main(int argc, char* argv[]) {
         
         if(!line.empty()){
             input.push_back(line);
+            line_num.push_back(l);
         }
+        l += 1;
     }
     input_file.close();
+
+
+    // for(auto j: line_num){
+    //     cout << j << " ";
+    // }
+    // cout << endl;
+    
 
     // for(auto &line: input){
     //     cout << line << endl;
@@ -313,7 +413,14 @@ int main(int argc, char* argv[]) {
 
     unordered_map<string, int> labels; // store labels
     vector<string> instructions; // store extracted instructions
-    processLabels(input, labels, instructions); // find locations of label
+    vector<int> line_numprocessed;
+    processLabels(input, labels, instructions, line_num, line_numprocessed); // find locations of label
+
+    // for(auto j: line_numprocessed){
+    //     cout << j << " ";
+    // }
+    // cout << endl;
+    // cout << instructions.size() << endl;
 
     // for(auto line : instructions) {
     //     cout << line << endl;
@@ -323,6 +430,7 @@ int main(int argc, char* argv[]) {
     vector<vector<string>> output; // for testing output
     int program_cntr = 0;
     
+    l = 0;
     for (auto line : instructions) {
         if (!line.empty()) {
             replace(line.begin(), line.end(), ',', ' ');
@@ -341,8 +449,9 @@ int main(int argc, char* argv[]) {
             // }
             // cout << endl;
             output.push_back(tokens); // testing parsed tokens
-            machineCode(tokens, labels, program_cntr);
+            machineCode(tokens, labels, program_cntr, line_numprocessed[l]);
             program_cntr += 4;
+            l += 1;
 
         }
     }
@@ -372,6 +481,7 @@ int main(int argc, char* argv[]) {
         output_file << code << endl;
     }
     output_file.close();
+    cout << endl <<"Output written to output.hex" << endl;
     return 0;
 }
 
