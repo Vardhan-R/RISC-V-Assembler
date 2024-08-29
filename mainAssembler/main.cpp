@@ -418,7 +418,7 @@ int main(int argc, char* argv[]) {
     // }
     // cout << endl;
 
-    vector<vector<string>> output; // for testing output
+    vector<vector<string>> parsed_output; // for testing output
     int program_cntr = 0;
 
     l = 0;
@@ -435,7 +435,7 @@ int main(int argc, char* argv[]) {
             }
 
             processBrackets(tokens); // handle brackets for load and store instructions
-            output.push_back(tokens); // testing parsed tokens
+            parsed_output.push_back(tokens); // testing parsed tokens
             machineCode(tokens, labels, program_cntr, line_numprocessed[l]);
             program_cntr += 4;
             l += 1;
@@ -460,7 +460,7 @@ int main(int argc, char* argv[]) {
             cout << endl;
         }
         else if(strcmp(argv[i],"-o") == 0){
-            for (auto vec : output) {
+            for (auto vec : parsed_output) {
                 for(auto token : vec) {
                     cout << token << "-";
                 }
