@@ -434,37 +434,43 @@ int main(int argc, char* argv[]) {
                 tokens.push_back(token);
             }
 
-            processBrackets(tokens);
-            // for(auto token : tokens) {
-            //     cout << token << "-";
-            // }
-            // cout << endl;
+            processBrackets(tokens); // handle brackets for load and store instructions
             output.push_back(tokens); // testing parsed tokens
             machineCode(tokens, labels, program_cntr, line_numprocessed[l]);
             program_cntr += 4;
             l += 1;
         }
     }
-
-    for(auto &code: final_hexcode) {
-        cout << code << endl;
+    
+    // debugging
+    // -d display hex code on terminal
+    // -l display labels on terminal
+    // -o display parsed tokens on terminal
+    for(int i = 2; i < argc;i++){
+        if (strcmp(argv[i], "-d") == 0){
+            for(auto &code: final_hexcode) {
+                cout << code << endl;
+            }
+            cout << endl;
+        }
+        else if(strcmp(argv[i], "-l") == 0){
+            for (auto l : labels) {
+                cout << l.first  << " " << l.second << endl;
+            }
+            cout << endl;
+        }
+        else if(strcmp(argv[i],"-o") == 0){
+            for (auto vec : output) {
+                for(auto token : vec) {
+                    cout << token << "-";
+                }
+                cout << endl;
+            }
+            cout << endl; 
+        } 
     }
+    
 
-
-
-    // for (auto vec : output) {
-    //     for(auto token : vec) {
-    //         cout << token << "-";
-    //     }
-    //     cout << endl;
-    // }
-
-
-
-    // cout << endl;
-    // for (auto l : labels) {
-    //     cout << l.first << hex << " " << l.second << endl;
-    // }
 
     ofstream output_file("output.hex");
     for (auto& code : final_hexcode) {
