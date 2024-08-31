@@ -133,10 +133,11 @@ void checkLabel(string &label, unordered_map<string, int> &labels, int line) {
 
 // Check range of immediate values
 void checkRange(int line, int imm, int high, int step_bits = 0, bool no_neg = false) {
-    int max_imm = (1 << high) - 1;
-    int min_imm = (-1 << high) * ((int) !no_neg);
+    int care_sign = no_neg;
+    int max_imm = (1 << (high + care_sign)) - 1;
+    int min_imm = (-1 << high) * (1 - care_sign);
     int step = 1 << step_bits;
-    cout << min_imm << " " << max_imm << endl;
+    // cout << min_imm << " " << max_imm << endl;
     if (imm < min_imm || imm > max_imm || imm % step != 0)
         cerr << "Warning: " << "Line " << line << " | Immediate value " << imm << " is out of range [" << min_imm << ", " << max_imm << "] (step = " << step << ")" << endl;
 }
@@ -319,7 +320,7 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
             }
 
             imm = eval(args[1], line);    // see (check range)
-            checkRange(line, imm, 20, 0, true);
+            checkRange(line, imm, 19, 0, true);
             imm = imm << 12;
             machine_code = (extractBits(imm, 31, 12, 0) * (1 << 12) +
                             rd * (1 << 7) + opcode_table[opcode]);
@@ -455,10 +456,10 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // debugging
-    // -d display hex code on terminal
-    // -l display labels on terminal
-    // -o display parsed tokens on terminal
+    /* Debugging:
+    -d: display hex code on terminal
+    -l: display labels on terminal
+    -o: display parsed tokens on terminal */
     for (int i = 2; i < argc; i++) {
         if (strcmp(argv[i], "-d") == 0) {
             for (auto &code: final_hexcode) {

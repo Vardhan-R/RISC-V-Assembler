@@ -1,6 +1,6 @@
 addi x1 x1 0
 sd x2 0(x3)
-lui x3 20000000
+lui x3 1000000
 lui x3 -1
 lui x3 -2
 auipc x3 65536
