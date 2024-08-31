@@ -7,5 +7,5 @@ main.o: main.cpp
 RISCV_instr_constants.o: RISCV_instr_constants.cpp
 	g++ -c RISCV_instr_constants.cpp
 
-clean:	
+clean:
 	rm *.o main output.hex

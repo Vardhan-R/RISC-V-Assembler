@@ -3,7 +3,6 @@
 #include <sstream>
 #include "RISCV_instr_constants.h"
 
-// develop -Vardhan
 using namespace std;
 
 vector<string> final_hexcode;
@@ -26,7 +25,7 @@ void processLabels(vector<string> &input, unordered_map<string, int> &labels, ve
     for (int i = 0; i < input.size(); ++i) {
         string line = input[i];
         size_t colon_pos = line.find(':');
-        if (colon_pos != string::npos) {    // If line contains a label
+        if (colon_pos != string::npos) {    // if line contains a label
             string label = line.substr(0, colon_pos);
             label = trim(label);    // see (should not start with a digit)
             line = line.substr(colon_pos + 1);    // line after label
@@ -51,7 +50,7 @@ void processBrackets(vector<string> &tokens) {
         if (pos != string::npos) {
             int k = token.length();
             string imm = token.substr(0, pos);
-            string reg = token.substr(pos + 1, k - pos - 2);    // see
+            string reg = token.substr(pos + 1, k - pos - 2);
             tokens.pop_back();
             tokens.push_back(reg);
             tokens.push_back(imm);
@@ -133,9 +132,13 @@ void checkLabel(string &label, unordered_map<string, int> &labels, int line) {
 }
 
 // Check range of immediate values
-void checkRange() {
-    // see
-    exit(1);
+void checkRange(int line, int imm, int high, int step_bits = 0, bool no_neg = false) {
+    int max_imm = (1 << high) - 1;
+    int min_imm = (-1 << high) * ((int) !no_neg);
+    int step = 1 << step_bits;
+    cout << min_imm << " " << max_imm << endl;
+    if (imm < min_imm || imm > max_imm || imm % step != 0)
+        cerr << "Warning: " << "Line " << line << " | Immediate value " << imm << " is out of range [" << min_imm << ", " << max_imm << "] (step = " << step << ")" << endl;
 }
 
 void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int program_cntr, int line) {
@@ -218,6 +221,7 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
             }
 
             imm = eval(args[2], line);    // see (check range)
+            checkRange(line, imm, 11);
             imm = extractBits(imm, 11, 0, 0);
 
             if (funct6_table[opcode] != -1) {
@@ -254,6 +258,7 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
             }
 
             imm = eval(args[2], line);    // see (check range)
+            checkRange(line, imm, 11);
 
             machine_code = (extractBits(imm, 11, 5, 0) * (1 << 25) +
                             rs2 * (1 << 20) + rs1 * (1 << 15) +
@@ -288,6 +293,7 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
             label = args[2];    // see (rel. jmp)
             checkLabel(label, labels, line);
             imm = labels[label] - program_cntr;
+            checkRange(line, imm, 12);    // see (check range)
 
             machine_code = (extractBits(imm, 12, 12, 0) * (1 << 31) +
                             extractBits(imm, 10, 5, 0) * (1 << 25) +
@@ -312,7 +318,8 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
                 rd = alias_to_ind[args[0]];
             }
 
-            imm = eval(args[1], line);
+            imm = eval(args[1], line);    // see (check range)
+            checkRange(line, imm, 20, 0, true);
             imm = imm << 12;
             machine_code = (extractBits(imm, 31, 12, 0) * (1 << 12) +
                             rd * (1 << 7) + opcode_table[opcode]);
@@ -334,7 +341,8 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
             }
             label = args[1];    // see (rel. jmp)
             checkLabel(label, labels, line);
-            imm = labels[label] - program_cntr;
+            imm = labels[label] - program_cntr;    // see (check range)
+            checkRange(line, imm, 20);
 
             machine_code = (extractBits(imm, 20, 20, 0) * (1 << 31) +
                             extractBits(imm, 10, 1, 0) * (1 << 21) +
