@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "*.py": "python",
-        "*.txt": "plaintext",
-        "xstring": "cpp",
-        "fstream": "cpp",
-        "sstream": "cpp"
-    }
-}
