@@ -123,12 +123,18 @@ void checkRegAlias(string &reg, int line) {
     }
 }
 
-// check if label is defined
+// Check if label is defined
 void checkLabel(string &label, unordered_map<string, int> &labels, int line) {
     if (labels.find(label) == labels.end()) {
         cerr << "Error : " << "Line " << line << "| Label not defined: " << label << endl;
         exit(1);
     }
+}
+
+// Check range of immediate values
+void checkRange() {
+    // see
+    exit(1);
 }
 
 void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int program_cntr, int line) {
