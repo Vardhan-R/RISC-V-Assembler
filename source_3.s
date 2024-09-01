@@ -9,3 +9,4 @@ L1: add x0 x0 x0
 beq x0 x0 L1
 jal x0 L1
 beq x0 x0 L1
+srai x0 x0 0

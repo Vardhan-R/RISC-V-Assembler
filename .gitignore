@@ -33,4 +33,6 @@
 
 # VS Code
 *.vscode
-.vscode
+
+# Output Files
+*.hex
