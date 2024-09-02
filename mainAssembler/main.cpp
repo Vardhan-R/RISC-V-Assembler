@@ -27,12 +27,18 @@ void processLabels(vector<string> &input, unordered_map<string, int> &labels, ve
         size_t colon_pos = line.find(':');
         if (colon_pos != string::npos) {    // if line contains a label
             string label = line.substr(0, colon_pos);
-            label = trim(label);    // see (should not start with a digit)
+            label = trim(label);    // extract label and remove whitespaces
+            // if label  previosuly defined raise error
+            if(labels.find(label) != labels.end()) {
+                cerr << "Error : " << "Line " << line_num[i] << "| Label already defined: " << label << endl;
+                exit(1);
+            }
             line = line.substr(colon_pos + 1);    // line after label
             line = trim(line);
             labels[label] = program_cntr;
         }
 
+        // if line is not empty, add to instructions
         if (!line.empty()) {
             line_numprocessed.push_back(line_num[i]);
             instructions.push_back(line);
@@ -145,6 +151,7 @@ void checkRange(int line, int imm, int high, int step_bits = 0, bool no_neg = fa
 void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int program_cntr, int line) {
     stringstream ss;
     string opcode = toLower(tokens[0]);
+    // check if opcode is valid
     if (opcode_table.find(opcode) == opcode_table.end()) {
         cerr << "Error : " << "Line " << line << "| Invalid Instruction :" << opcode << endl;
         exit(1);
@@ -159,9 +166,13 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
     int arg_len = args.size();
 
     switch(type) {
+        // R-type instructions
         case R:
+            // check if number of arguments are correct
             checkArgLen(opcode, arg_len, 3, line);
 
+            // parse  register numbers
+            // check if register number is valid
             if (args[0][0] == 'x') {
                 rd = stoi(args[0].substr(1));
                 checkRegister(rd, line);
@@ -189,6 +200,7 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
                 rs2 = alias_to_ind[args[2]];
             }
 
+            // construct machine code from constants
             machine_code = (funct7_table[opcode] << 25)
                            + (rs2 << 20)
                            + (rs1 << 15)
@@ -201,8 +213,13 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
             final_hexcode.push_back(hex_code);
             break;
 
+        // I-type instructions
         case I:
+            // check if number of arguments are correct
             checkArgLen(opcode, arg_len, 3, line);
+
+            // parse register numbers
+            // check if register number is valid
             if (args[0][0] == 'x') {
                 rd = stoi(args[0].substr(1));
                 checkRegister(rd, line);
@@ -221,14 +238,17 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
                 rs1 = alias_to_ind[args[1]];
             }
 
-            imm = eval(args[2], line);    // see (check range)
-            checkRange(line, imm, 11);
+            // parse immediate from dec , hex or bin representation
+            imm = eval(args[2], line);    
+            checkRange(line, imm, 11); // check if immediate value is in range
             imm = extractBits(imm, 11, 0, 0);
 
             if (funct6_table[opcode] != -1) {
                 imm = extractBits(imm, 5, 0, 0);    // see (check range)
                 imm += funct6_table[opcode] * (1 << 6);
             }
+
+            // construct machine code from constants
             machine_code = (imm * (1 << 20) + rs1 * (1 << 15) +
                             funct3_table[opcode] * (1 << 12) +
                             rd * (1 << 7) + opcode_table[opcode]);
@@ -238,8 +258,13 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
             final_hexcode.push_back(hex_code);
             break;
 
+        // S-type instructions
         case S:
+            // check if number of arguments are correct
             checkArgLen(opcode, arg_len, 3, line);
+
+            // parse register numbers
+            // check if register number is valid
             if (args[0][0] == 'x') {
                 rs2 = stoi(args[0].substr(1));
                 checkRegister(rs2, line);
@@ -258,9 +283,11 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
                 rs1 = alias_to_ind[args[1]];
             }
 
-            imm = eval(args[2], line);    // see (check range)
-            checkRange(line, imm, 11);
+            // parse immediate from dec , hex or bin representation
+            imm = eval(args[2], line);   
+            checkRange(line, imm, 11); // check if immediate value is in range
 
+            // construct machine code from constants
             machine_code = (extractBits(imm, 11, 5, 0) * (1 << 25) +
                             rs2 * (1 << 20) + rs1 * (1 << 15) +
                             funct3_table[opcode] * (1 << 12) +
@@ -270,9 +297,14 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
             hex_code = ss.str();
             final_hexcode.push_back(hex_code);
             break;
-
+        
+        // B-type instructions
         case B:
+            // check if number of arguments are correct
             checkArgLen(opcode, arg_len, 3, line);
+
+            // parse register numbers
+            // check if register number is valid
             if (args[0][0] == 'x') {
                 rs1 = stoi(args[0].substr(1));
                 checkRegister(rs1, line);
@@ -291,11 +323,15 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
                 rs2 = alias_to_ind[args[1]];
             }
 
-            label = args[2];    // see (rel. jmp)
+            
+            label = args[2];   
+            // check if label is defined
             checkLabel(label, labels, line);
             imm = labels[label] - program_cntr;
-            checkRange(line, imm, 12);    // see (check range)
+            checkRange(line, imm, 12);   // check if jump difference is in range
 
+
+            // construct machine code from constants
             machine_code = (extractBits(imm, 12, 12, 0) * (1 << 31) +
                             extractBits(imm, 10, 5, 0) * (1 << 25) +
                             rs2 * (1 << 20) + rs1 * (1 << 15) +
@@ -308,8 +344,13 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
             final_hexcode.push_back(hex_code);
             break;
 
+        // U-type instructions
         case U:
+            // check if number of arguments are correct
             checkArgLen(opcode, arg_len, 2, line);
+
+            // parse register numbers
+            // check if register number is valid
             if (args[0][0] == 'x') {
                 rd = stoi(args[0].substr(1));
                 checkRegister(rd, line);
@@ -319,9 +360,12 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
                 rd = alias_to_ind[args[0]];
             }
 
-            imm = eval(args[1], line);    // see (check range)
-            checkRange(line, imm, 19, 0, true);
+            // parse immediate from dec , hex or bin representation
+            imm = eval(args[1], line);   
+            checkRange(line, imm, 19, 0, true); // check if immediate value is in range
             imm = imm << 12;
+
+            // construct machine code from constants
             machine_code = (extractBits(imm, 31, 12, 0) * (1 << 12) +
                             rd * (1 << 7) + opcode_table[opcode]);
 
@@ -330,8 +374,13 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
             final_hexcode.push_back(hex_code);
             break;
 
+        // J-type instructions
         case J:
+            // check if number of arguments are correct
             checkArgLen(opcode, arg_len, 2, line);
+
+            // parse register numbers
+            // check if register number is valid
             if (args[0][0] == 'x') {
                 rd = stoi(args[0].substr(1));
                 checkRegister(rd, line);
@@ -340,11 +389,13 @@ void machineCode(vector<string> &tokens, unordered_map<string, int> &labels, int
                 checkRegAlias(args[0], line);
                 rd = alias_to_ind[args[0]];
             }
-            label = args[1];    // see (rel. jmp)
-            checkLabel(label, labels, line);
-            imm = labels[label] - program_cntr;    // see (check range)
-            checkRange(line, imm, 20);
 
+            label = args[1];    // label
+            checkLabel(label, labels, line); // check if label is defined
+            imm = labels[label] - program_cntr;    
+            checkRange(line, imm, 20); // check if jump difference is in range
+
+            // construct machine code from constants
             machine_code = (extractBits(imm, 20, 20, 0) * (1 << 31) +
                             extractBits(imm, 10, 1, 0) * (1 << 21) +
                             extractBits(imm, 11, 11, 0) * (1 << 20) +
@@ -375,27 +426,33 @@ int main(int argc, char* argv[]) {
     vector<string> input;
     string line;
     vector<int> line_num;
-    int l = 1;
+    int l = 1; // line number
     while (getline(input_file, line)) {
+        // remove leading and trailing whitespaces
         line = trim(line);
+
+        // ignore lines starting with  a dot (.word, .text, .data)
         size_t dot_pos = line.find('.');
         if (dot_pos != string::npos) {
                 l += 1;
                 continue;
         }
-
+        
+        // ignore comments starting with #
         size_t comment_pos = line.find('#');
         if (comment_pos != string::npos) {
             line = line.substr(0, comment_pos);
             line = trim(line);
         }
 
+        // ignore comments starting with ;
         comment_pos = line.find(';');
         if (comment_pos != string::npos) {
             line = line.substr(0, comment_pos);
             line = trim(line);
         }
 
+        // ignore empty lines
         if (!line.empty()) {
             input.push_back(line);
             line_num.push_back(l);
@@ -405,52 +462,33 @@ int main(int argc, char* argv[]) {
     input_file.close();
 
 
-    // for (auto j: line_num) {
-    //     cout << j << " ";
-    // }
-    // cout << endl;
-
-
-    // for (auto &line: input) {
-    //     cout << line << endl;
-    // }
-    // cout << endl;
-
     unordered_map<string, int> labels;    // store labels
     vector<string> instructions;    // store extracted instructions
-    vector<int> line_numprocessed;
+    vector<int> line_numprocessed; // store line numbers of processed instructions
     processLabels(input, labels, instructions, line_num, line_numprocessed);    // find locations of label
 
-    // for (auto j: line_numprocessed) {
-    //     cout << j << " ";
-    // }
-    // cout << endl;
-    // cout << instructions.size() << endl;
 
-    // for (auto line : instructions) {
-    //     cout << line << endl;
-    // }
-    // cout << endl;
-
-    vector<vector<string>> parsed_output;    // for testing output
+    vector<vector<string>> parsed_output;  // for testing output
     int program_cntr = 0;
 
     l = 0;
     for (auto line : instructions) {
         if (!line.empty()) {
+            // replace commas with spaces
             replace(line.begin(), line.end(), ',', ' ');
 
-            istringstream iss(line);    // remove white spaces
+            istringstream iss(line);  // remove white spaces
             string token;
             vector<string> tokens;
             // tokens is vector of strings that has to be processed
+            // instruction : add x1 x2 x3; tokens : {add, x1, x2, x3}
             while (iss >> token) {
                 tokens.push_back(token);
             }
 
             processBrackets(tokens);    // handle brackets for load and store instructions
             parsed_output.push_back(tokens);    // testing parsed tokens
-            machineCode(tokens, labels, program_cntr, line_numprocessed[l]);
+            machineCode(tokens, labels, program_cntr, line_numprocessed[l]); // convert to machine code
             program_cntr += 4;
             l += 1;
         }
@@ -459,7 +497,7 @@ int main(int argc, char* argv[]) {
     /* Debugging:
     -d: display hex code on terminal
     -l: display labels on terminal
-    -o: display parsed tokens on terminal */
+    -o: display parsed tokens on terminal seperated by "-"*/
     for (int i = 2; i < argc; i++) {
         if (strcmp(argv[i], "-d") == 0) {
             for (auto &code: final_hexcode) {
@@ -485,7 +523,7 @@ int main(int argc, char* argv[]) {
     }
 
 
-
+    // write output to file
     ofstream output_file("output.hex");
     for (auto &code : final_hexcode) {
         output_file << code << endl;
