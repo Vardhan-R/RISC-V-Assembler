@@ -27,7 +27,11 @@ void processLabels(vector<string> &input, unordered_map<string, int> &labels, ve
         size_t colon_pos = line.find(':');
         if (colon_pos != string::npos) {    // if line contains a label
             string label = line.substr(0, colon_pos);
-            label = trim(label);    // see (should not start with a digit)
+            label = trim(label);  // see (should not start with a digit)
+            if(labels.find(label) != labels.end()) {
+                cerr << "Error : " << "Line " << line_num[i] << "| Label already defined: " << label << endl;
+                exit(1);
+            }
             line = line.substr(colon_pos + 1);    // line after label
             line = trim(line);
             labels[label] = program_cntr;
@@ -403,33 +407,11 @@ int main(int argc, char* argv[]) {
     }
     input_file.close();
 
-
-    // for (auto j: line_num) {
-    //     cout << j << " ";
-    // }
-    // cout << endl;
-
-
-    // for (auto &line: input) {
-    //     cout << line << endl;
-    // }
-    // cout << endl;
-
     unordered_map<string, int> labels;    // store labels
     vector<string> instructions;    // store extracted instructions
     vector<int> line_numprocessed;
     processLabels(input, labels, instructions, line_num, line_numprocessed);    // find locations of label
 
-    // for (auto j: line_numprocessed) {
-    //     cout << j << " ";
-    // }
-    // cout << endl;
-    // cout << instructions.size() << endl;
-
-    // for (auto line : instructions) {
-    //     cout << line << endl;
-    // }
-    // cout << endl;
 
     vector<vector<string>> parsed_output;    // for testing output
     int program_cntr = 0;
