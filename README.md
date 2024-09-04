@@ -1,8 +1,18 @@
 # RISC-V-Assembler
-A RISC-V assembler.
+A RISC-V assembler (RV64).
+
+## To compile
+`make`
+- to compile run: `make`
+- to run: `./riscv_asm.exe <input file>`
+- to clean object files: `make clean`
+
+## Debugging
+- `-d`: display hex code on terminal
+- `-l`: display labels on terminal
+- `-o`: display parsed tokens on terminal
 
 ##  Features
-
 1. **Implemented handling of blank lines and comments in source files** (`;`, `#`). It can also ignore `.text`, `.word`, etc., type instructions. It is also robust towards variable blank spaces and commas between instructions.
 
 2. **Can accept immediate values** in the form of decimal, binary (starting with `0b`, e.g., `0b100`), and hexadecimal format (starting with `0x`, e.g., `0x1fa`).
@@ -22,7 +32,7 @@ A RISC-V assembler.
     - Ensures labels are properly defined and not repeated
     - The immediate values are within the range specified by ISA
 
-## Limitations (Cannot handle)
+## Limitations (cannot handle)
 - ecall
 - ebreak
 - rel jmp with numbers (B-type)
@@ -30,18 +40,12 @@ A RISC-V assembler.
 - I type isntructions specified in the format `ld rd imm rs1` 
 - S type isntructions specified in the format `sd rs1 imm rd`
 - evaluation of mathematical expressions as `imm`
+
+## Known errors
 - parses `ld rd rs1 imm` for I type instruction
 
-
-## To compile
-`make`
-- to compile run: `make`
-- to run: `./riscv_asm.exe <input file>`
-- to clean object files: `make clean`
-
-## Debugging
-- `-d`: display hex code on terminal
-- `-l`: display labels on terminal
-- `-o`: display parsed tokens on terminal
-
-
+## (Possibly) Upcoming Features
+- Negative hex and bin.
+- Label does not point to any instruction.
+- Pseudoinstructions.
+- `JALR rd, offset(rs1)`
