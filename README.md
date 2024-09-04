@@ -37,15 +37,23 @@ A RISC-V assembler (RV64).
 - ebreak
 - rel jmp with numbers (B-type)
 - rel jmp with numbers (J-type)
-- I type isntructions specified in the format `ld rd imm rs1` 
+- I type isntructions specified in the format `ld rd imm rs1`
 - S type isntructions specified in the format `sd rs1 imm rd`
 - evaluation of mathematical expressions as `imm`
 
 ## Known errors
-- parses `ld rd rs1 imm` for I type instruction
+- Parses `ld rd rs1 imm` for I type instruction.
+- Parses `jalr rd rs1 offset`.
+- I type isntructions specified in the format `ld rd imm rs1`.
+- S type isntructions specified in the format `sd rs1 imm rd`.
+- Negative hex and bin are interpreted as zero.
 
 ## (Possibly) Upcoming Features
 - Negative hex and bin.
 - Label does not point to any instruction.
 - Pseudoinstructions.
-- `JALR rd, offset(rs1)`
+- Eval in `imm`.
+- Handing errors in `.data`.
+- The instructions shouldn't be under `.data`.
+- Label pointing to a `.dword` (or somthing) must point to that address.
+- A CFG approach.
