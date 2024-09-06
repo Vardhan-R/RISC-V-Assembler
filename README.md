@@ -31,29 +31,19 @@ A RISC-V assembler (RV64).
     - Ensures immediate values are decimal, hexadecimal or binary format
     - Ensures labels are properly defined and not repeated
     - The immediate values are within the range specified by ISA
+        (generates a warning when the immediate value is out of range but only condsiders the expected number of bits spcified by the ISA like I type extracts 12 bits.)
 
 ## Limitations (cannot handle)
 - ecall
 - ebreak
-- rel jmp with numbers (B-type)
-- rel jmp with numbers (J-type)
-- I type isntructions specified in the format `ld rd imm rs1`
-- S type isntructions specified in the format `sd rs1 imm rd`
+- Relative jump with numbers as immediate instead of labels (B-type and J-type)
+- I type instructions specified in the format `ld rd imm rs1`
+- S type instructions specified in the format `sd rs1 imm rd`
 - evaluation of mathematical expressions as `imm`
 
-## Known errors
-- Parses `ld rd rs1 imm` for I type instruction.
+## Known errors 
+- Parses `ld rd rs1 imm` for I type instruction. (syntactically incorrect but our program parses it without throwing error)
 - Parses `jalr rd rs1 offset`.
-- I type isntructions specified in the format `ld rd imm rs1`.
-- S type isntructions specified in the format `sd rs1 imm rd`.
-- Negative hex and bin are interpreted as zero.
 
-## (Possibly) Upcoming Features
-- Negative hex and bin.
-- Label does not point to any instruction.
-- Pseudoinstructions.
-- Eval in `imm`.
-- Handing errors in `.data`.
-- The instructions shouldn't be under `.data`.
-- Label pointing to a `.dword` (or somthing) must point to that address.
-- A CFG approach.
+
+
