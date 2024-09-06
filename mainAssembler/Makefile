@@ -8,4 +8,4 @@ RISCV_instr_constants.o: RISCV_instr_constants.cpp
 	g++ -c RISCV_instr_constants.cpp
 
 clean:
-	rm *.o  *.exe  *.out *.hex
+	rm *.o riscv_asm *.hex
